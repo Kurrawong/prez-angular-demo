@@ -11,7 +11,7 @@ const sampleFilter = {
       "op": "=",
       "args": [
         {
-          "property": "http://purl.org/linked-data/registry#Status"
+          "property": "http://purl.org/linked-data/registry#status"
         },
         "https://linked.data.gov.au/def/reg-statuses/experimental"
       ]

@@ -9,6 +9,7 @@ This is a simple Angular application that demonstrates how to use the prez libra
 
 ## Features to include:
 - [x] Integrate with prez API getList
+- [x] Faceting data model (draft status only)
 - [ ] Profile selector
 - [ ] Add a search box to search for datasets
 - [ ] Add a filter to filter the datasets

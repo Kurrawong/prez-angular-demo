@@ -1,0 +1,119 @@
+<div class="container mx-auto p-4">
+  <h2 class="text-2xl font-bold text-gray-800 mb-4">Data Table Example</h2>
+
+  <form (ngSubmit)="onSubmit()" #pathForm="ngForm">
+    <!-- Input for API path -->
+    <div class="mb-4">
+      <label class="block text-gray-700 font-medium mb-1">API Path:</label>
+      <div class="flex gap-2">
+        <input
+          name="path"
+          class="block w-full max-w-md p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          type="text"
+          [(ngModel)]="apiPath"
+          placeholder="Enter API Path (e.g., /catalogs)"
+        />
+        <!-- Load Data Button -->
+        <button
+          type="submit"
+          class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-200"
+        >
+          Load Data
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Error Message -->
+  <div
+    *ngIf="errorMessage"
+    class="bg-red-100 text-red-600 border border-red-300 p-4 rounded-md mt-4"
+  >
+    {{ errorMessage }}
+  </div>
+
+  <div class="flex gap-6">
+    <!-- Facets -->
+    <app-facets
+      *ngIf="tableData$ | async as tableData"
+      [facets]="tableData.facets"
+    ></app-facets>
+
+    <!-- Main content -->
+    <div class="flex-1">
+      <!-- Table -->
+      <div *ngIf="tableData$ | async as tableData; else loading" class="mt-6">
+        <table
+          class="w-full border-collapse border border-gray-300 text-left text-sm"
+          *ngIf="tableData.data.length > 0; else noData"
+        >
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="border border-gray-300 p-2">URI</th>
+              <th class="border border-gray-300 p-2">Label</th>
+              <th *ngFor="let column of columns" class="border border-gray-300 p-2">
+                {{ column }}
+              </th>
+              <th class="border border-gray-300 p-2">Members</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let item of tableData.data"
+              class="hover:bg-gray-50 transition duration-150"
+            >
+              <td class="border border-gray-300 p-2">
+                <ng-container *ngIf="getItemLink(item); else noLink">
+                  <a 
+                    [routerLink]="[]"
+                    [queryParams]="{ path: getItemLink(item) }"
+                    queryParamsHandling="merge"
+                    class="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    {{ item.value }}
+                  </a>
+                </ng-container>
+                <ng-template #noLink>
+                  {{ item.value }}
+                </ng-template>
+              </td>
+              <td class="border border-gray-300 p-2">{{ getItemLabel(item) }}</td>
+              <td *ngFor="let column of columns" class="border border-gray-300 p-2">
+                {{ getPropertyValue(item, column) }}
+              </td>
+              <td class="border border-gray-300 p-2">
+                <ng-container *ngIf="hasMembersLink(item); else noMembers">
+                  <a 
+                    [routerLink]="[]"
+                    [queryParams]="{ path: getItemMembers(item) }"
+                    queryParamsHandling="merge"
+                    class="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    {{ getItemMembers(item) }}
+                  </a>
+                </ng-container>
+                <ng-template #noMembers>
+                  {{ getItemMembers(item) }}
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Replace the existing pagination div with: -->
+      <app-pagination
+        *ngIf="tableData$ | async as tableData"
+        [tableData]="tableData"
+      ></app-pagination>
+    </div>
+  </div>
+
+  <!-- Loading and No Data Templates -->
+  <ng-template #loading>
+    <p class="text-gray-500 mt-4">Loading data...</p>
+  </ng-template>
+  <ng-template #noData>
+    <p class="text-gray-500 mt-4">No data found.</p>
+  </ng-template>
+</div>

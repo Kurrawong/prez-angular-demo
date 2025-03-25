@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { getList, literal, node } from 'prez-lib';
+import { getList, getProfiles, literal, node } from 'prez-lib';
 import { Observable, from, map } from 'rxjs';
-import type { PrezNode } from 'prez-lib';
+import type { PrezDataList, PrezNode, PrezProfiles, PrezProfileHeader } from 'prez-lib';
 import type { PrezDataListWithFacets, PrezFacet, PrezFacetValue } from '../types';
 
 const sampleFilter = {
@@ -19,6 +19,19 @@ const sampleFilter = {
   ]
 }
 
+export type SimpleProfile = {
+  id: string;
+  properties: string[];
+}
+
+export interface Profile {
+  token: string;
+  title: string;
+  description: string;
+  current: boolean;
+  default: boolean;
+  uri: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -28,13 +41,43 @@ export class DataService {
   private baseUrl =
     'https://prez.niceforest-128e6d31.australiaeast.azurecontainerapps.io';
 
-  getListData(path: string, page: number = 1, limit: number = 10): Observable<PrezDataListWithFacets> {
-    const pathWithFilter = path + '?_profile=prez:OGCSchemesListProfile&filter=' + encodeURIComponent(JSON.stringify(sampleFilter));
-    return from(getList(this.baseUrl, path)).pipe(
+  getListData(path: string, profile: string, page: number = 1, limit: number = 10): Observable<PrezDataListWithFacets> {
+    const params = new URLSearchParams();
+    if(profile) {
+      params.set('_profile', profile);
+    }
+    if(page) {
+      params.set('_page', page.toString());
+    }
+    if(limit) {
+      params.set('_limit', limit.toString());
+    }
+    const filter = false;
+    if(filter) {
+      params.set('_filter', JSON.stringify(filter));
+    }
+    const pathWithFilter = path + '?'  + params.toString();
+    // _profile=prez:OGCSchemesListProfile&filter=' + encodeURIComponent(JSON.stringify(sampleFilter));
+    return from(getList(this.baseUrl, pathWithFilter)).pipe(
       map(data => ({
         ...data,
         facets: this.getMockFacets()
       }))
+    );
+  }
+
+  getGlobalProfiles(): Observable<SimpleProfile[]> {
+    const profiles = getProfiles(this.baseUrl);
+    const profilesArray = from(profiles);
+    return profilesArray.pipe(
+      map(profiles => 
+        Object.keys(profiles).map(profileKey => ({
+          id: profileKey,
+          properties: profiles[profileKey].flatMap(val => 
+            val.list && !val.node.value ? val.list.map(val2 => val2.node.value) : [val.node.value]
+          )
+        }))
+      )
     );
   }
 

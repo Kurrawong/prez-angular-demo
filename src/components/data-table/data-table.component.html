@@ -1,5 +1,7 @@
 <div class="container mx-auto p-4">
-  <h2 class="text-2xl font-bold text-gray-800 mb-4">Data Table Example</h2>
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-2xl font-bold text-gray-800">Data Table Example</h2>
+  </div>
 
   <form (ngSubmit)="onSubmit()" #pathForm="ngForm">
     <!-- Input for API path -->
@@ -32,6 +34,29 @@
     {{ errorMessage }}
   </div>
 
+  <div>
+    <h3 class="text-lg font-medium mb-2">Available Profiles</h3>
+    <div
+      *ngIf="tableData$ | async as tableData"
+      class="flex gap-2 flex-wrap"
+    >
+      <a
+        *ngFor="let profile of tableData.profiles | slice:0 | sort:'title'"
+        [routerLink]="[]"
+        [queryParams]="{ _profile: profile.token }"
+        queryParamsHandling="merge"
+        class="px-3 py-1 text-sm rounded-full cursor-pointer"
+        [class.bg-blue-100]="profile.current"
+        [class.text-blue-700]="profile.current"
+        [class.bg-gray-100]="!profile.current"
+        [class.text-gray-700]="!profile.current"
+        [class.hover:bg-gray-200]="!profile.current"
+      >
+        {{ profile.title }}
+      </a>
+    </div>
+  </div>
+
   <div class="flex gap-6">
     <!-- Facets -->
     <app-facets
@@ -51,8 +76,11 @@
             <tr>
               <th class="border border-gray-300 p-2">URI</th>
               <th class="border border-gray-300 p-2">Label</th>
-              <th *ngFor="let column of columns" class="border border-gray-300 p-2">
-                {{ column }}
+              <th 
+                *ngFor="let column of getDisplayColumns(tableData.data)" 
+                class="border border-gray-300 p-2"
+              >
+                {{ getColumnLabel(column) }}
               </th>
               <th class="border border-gray-300 p-2">Members</th>
             </tr>
@@ -78,8 +106,11 @@
                 </ng-template>
               </td>
               <td class="border border-gray-300 p-2">{{ getItemLabel(item) }}</td>
-              <td *ngFor="let column of columns" class="border border-gray-300 p-2">
-                {{ getPropertyValue(item, column) }}
+              <td 
+                *ngFor="let column of getDisplayColumns(tableData.data)" 
+                class="border border-gray-300 p-2"
+              >
+                {{ getPropertyValue(item, column.value) }}
               </td>
               <td class="border border-gray-300 p-2">
                 <ng-container *ngIf="hasMembersLink(item); else noMembers">

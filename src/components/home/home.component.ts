@@ -9,6 +9,8 @@ import { RouterModule } from '@angular/router';
     <div class="home-container">
       <h1>Angular Prez-lib Demo Application</h1>
       <a routerLink="/data-list">View Data List</a>
+      &nbsp;
+      <a routerLink="/profiles">View All Profiles</a>
     </div>
   `,
   styles: [`

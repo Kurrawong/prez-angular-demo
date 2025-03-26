@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { getList, getProfiles, literal, node } from 'prez-lib';
-import { Observable, from, map } from 'rxjs';
-import type { PrezDataList, PrezNode, PrezProfiles, PrezProfileHeader } from 'prez-lib';
-import type { PrezDataListWithFacets, PrezFacet, PrezFacetValue } from '../types';
+import { Observable, from, map, BehaviorSubject } from 'rxjs';
+import type { PrezDataList, PrezNode, PrezProfiles, PrezProfileHeader, PrezFocusNode } from 'prez-lib';
+import type { PrezDataListWithFacets, PrezFacet, PrezFacetValue, RequestInfo } from '../types';
 
 const sampleFilter = {
   "op": "and",
@@ -41,27 +41,36 @@ export class DataService {
   private baseUrl =
     'https://prez.niceforest-128e6d31.australiaeast.azurecontainerapps.io';
 
+  private requestInfo = new BehaviorSubject<RequestInfo | null>(null);
+  requestInfo$ = this.requestInfo.asObservable();
+
+  setBaseUrl(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
+
   getListData(path: string, profile: string, page: number = 1, limit: number = 10): Observable<PrezDataListWithFacets> {
     const params = new URLSearchParams();
     if(profile) {
       params.set('_profile', profile);
     }
     if(page) {
-      params.set('_page', page.toString());
+      params.set('page', page.toString());
     }
     if(limit) {
-      params.set('_limit', limit.toString());
+      params.set('limit', limit.toString());
     }
-    const filter = false;
-    if(filter) {
-      params.set('_filter', JSON.stringify(filter));
-    }
-    const pathWithFilter = path + '?'  + params.toString();
-    // _profile=prez:OGCSchemesListProfile&filter=' + encodeURIComponent(JSON.stringify(sampleFilter));
+    const pathWithFilter = path + '?' + params.toString();
+    
+    // Emit request info
+    this.requestInfo.next({
+      url: this.baseUrl + pathWithFilter,
+      params: Object.fromEntries(params.entries())
+    } as RequestInfo);
+
     return from(getList(this.baseUrl, pathWithFilter)).pipe(
       map(data => ({
         ...data,
-        facets: this.getMockFacets()
+        facets: this.generateFacetsFromData(data.data)
       }))
     );
   }
@@ -81,33 +90,52 @@ export class DataService {
     );
   }
 
-  private getMockFacets(): PrezFacet[] {
-    return [
-      {
-        facetName: "type",
-        facetValues: [{
-          term: node({value: "http://www.w3.org/ns/dcat#Catalog", label: literal("Catalog")}),
-          count: 5
-        },
-        {
-          term: node({value: "http://www.w3.org/ns/dcat#Dataset", label: literal("Dataset")}),
-          count: 3
+  private generateFacetsFromData(data: PrezFocusNode[]): PrezFacet[] {
+    const facetGroups = new Map<string, Map<string, { value: string, label?: string, count: number }>>();
+    
+    // Collect all property values and their counts
+    data.forEach(item => {
+      Object.entries(item.properties || {}).forEach(([propertyUri, property]) => {
+        const propertyLabel = property.predicate?.label?.value || propertyUri;
+        if (!facetGroups.has(propertyLabel)) {
+          facetGroups.set(propertyLabel, new Map());
         }
-        ] as PrezFacetValue[]
-      },
-      {
-        facetName: "publisher",
-        facetValues: [{
-          term: node({value: "http://example.org/org/ga", label: literal("Geoscience Australia")}),
-          count: 4
-        },
-        {
-          term: node({value: "http://example.org/org/csiro", label: literal("CSIRO")}),
-          count: 2
-        }
-        ] as PrezFacetValue[]
-      }
-    ];
+        
+        property.objects.forEach(obj => {
+          const value = obj.value;
+          const valueKey = value; // Use value as key for the Map
+          const existingEntry = facetGroups.get(propertyLabel)!.get(valueKey);
+          
+          facetGroups.get(propertyLabel)!.set(valueKey, {
+            value,
+            label: (obj as PrezNode).label?.value || obj.value,
+            count: (existingEntry?.count || 0) + 1
+          });
+        });
+      });
+    });
+
+    // Convert to PrezFacet array, filtering out single-occurrence values
+    return Array.from(facetGroups.entries())
+      .map(([propertyUri, values]) => {
+        // Get the property's predicate label if available
+        const predicate = data[0]?.properties?.[propertyUri]?.predicate;
+        const facetLabel = predicate?.label?.value || propertyUri;
+
+        return {
+          facetName: facetLabel,
+          facetValues: Array.from(values.entries())
+            .filter(([_, entry]) => entry.count > 1)
+            .map(([_, entry]): PrezFacetValue => ({
+              term: node({
+                value: entry.value,
+                label: literal(entry.label || entry.value)
+              }),
+              count: entry.count
+            }))
+        };
+      })
+      .filter(facet => facet.facetValues.length > 0);
   }
 }
 

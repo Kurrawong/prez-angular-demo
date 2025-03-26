@@ -17,5 +17,10 @@ export type PrezDataListWithFacets = PrezDataList & {
 export type PrezDataSearchWithFacets = PrezDataSearch & {
     facets: PrezFacet[];
 }
+
+export interface RequestInfo {
+  url: string;
+  params: Record<string, any>;
+}
  
   

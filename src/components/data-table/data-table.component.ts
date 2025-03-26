@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { Observable, of } from 'rxjs';
-import type { PrezDataSearch, PrezDataList, PrezFocusNode, PrezNode, PrezProperties, PrezProperty, PrezTerm, PrezLiteral, PrezProfileHeader } from 'prez-lib';
+import type { PrezFocusNode, PrezNode } from 'prez-lib';
 import type { PrezDataListWithFacets } from '../../types';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterModule } from '@angular/router';

@@ -1,31 +1,38 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import type { PrezFacet, PrezFacetValue } from '../../types';
 import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-facets',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="w-64 bg-white p-4 mt-6 border border-gray-200 rounded-lg">
-      <h3 class="text-lg font-semibold mb-4">Filters</h3>
+      <h3 class="text-lg font-semibold mb-4">Facets</h3>
       
       <div *ngFor="let group of getFacetGroups()" class="mb-6">
-        <h4 class="text-sm font-medium text-gray-700 mb-2 capitalize">{{ group.facetName }}</h4>
-        <div class="space-y-2">
-          <div *ngFor="let facet of group.facetValues" 
-               class="flex items-center justify-between hover:bg-gray-50 p-1 rounded">
-            <button
-              class="text-sm text-left flex-grow"
-              [class.text-blue-600]="isSelected(facet)"
-              (click)="toggleFacet(facet)"
-            >
-              {{ getFacetLabel(facet) }}
-            </button>
-            <span class="text-xs text-gray-500">{{ facet.count }}</span>
+        <fieldset class="border border-gray-200 rounded p-3">
+          <legend class="text-sm font-medium text-gray-700 px-2">
+            {{ group.facetName }}
+          </legend>
+          <div class="space-y-2">
+            <div *ngFor="let facet of group.facetValues" 
+                 class="flex items-center justify-between hover:bg-gray-50 p-1 rounded">
+              <a 
+                [routerLink]="[]"
+                [queryParams]="{ _filter: facet.term.value }"
+                queryParamsHandling="merge"
+                class="text-sm text-left flex-grow"
+                [class.text-blue-600]="isSelected(facet)"
+              >
+                {{ getFacetLabel(facet) }}
+              </a>
+              <span class="text-xs text-gray-500">{{ facet.count }}</span>
+            </div>
           </div>
-        </div>
+        </fieldset>
       </div>
     </div>
   `

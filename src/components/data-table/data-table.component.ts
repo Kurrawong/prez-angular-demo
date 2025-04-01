@@ -1,8 +1,9 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
-import { Observable, of } from 'rxjs';
+import { PageInfoService } from '../../services/page-info.service';
+import { Observable } from 'rxjs';
 import type { PrezFocusNode, PrezNode } from 'prez-lib';
 import type { PrezDataListWithFacets } from '../../types';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -10,6 +11,7 @@ import { RouterModule } from '@angular/router';
 import { PaginationComponent } from '../pagination/pagination.component';
 import { FacetsComponent } from '../facets/facets.component';
 import { SortPipe } from '../../pipes/sort.pipe';
+import { Filter, filterToJson, parseFilterQuery } from '../../cql';
 
 
 // const x:PrezNode;
@@ -32,31 +34,45 @@ export class DataTableComponent implements OnInit {
 
   constructor(
     private dataService: DataService,
+    private pageInfoService: PageInfoService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
-    this.route.queryParams.subscribe(params => {
-      this.apiPath = params['path'] || this.defaultPath;
+    this.route.queryParams.subscribe(() => {
+      this.apiPath = this.route.snapshot.queryParams['path'] || this.defaultPath;
       this.loadData();
     });
   }
 
-  loadData(path?: string) {
-    this.errorMessage = null;
-    if (path) {
-      this.apiPath = path;
-    }
-    try {
-      const page = Number(this.route.snapshot.queryParams['page']) || 1;
-      const limit = Number(this.route.snapshot.queryParams['limit']) || 10;
-      const profile = this.route.snapshot.queryParams['_profile'] || null;
-      this.tableData$ = this.dataService.getListData(this.apiPath, profile, page, limit);
-    } catch (error) {
-      this.errorMessage = 'Failed to load data. Please check your API path and try again.';
-    }
+  loadData() {
+    const pageInfo = this.pageInfoService.getPageInfo();
+    this.tableData$ = this.dataService.getListData(this.apiPath, pageInfo);
+    console.log('Data loaded:', this.tableData$.subscribe(data => console.log('Data:', data)));
+  }
 
+  getCurrentFilters(): Filter | null {
+    return null;
+    // const filter = this.route.snapshot.queryParams['filter'];
+    // if (!filter) {
+    //   return null;
+    // }
+    // return parseFilterQuery(filter);
+  }
+
+  addFilter() {
+    // const filter:Filter = this.getCurrentFilters() || {expression: []}
+    // if (!filter) {
+      
+    //   addToFilter
+    // }
+    // this.router.navigate([], {
+    //   relativeTo: this.route,
+    //   queryParams: { filter: filterToJson(filter) },
+    //   queryParamsHandling: 'merge'
+    // });
   }
 
   getItemLink(item: PrezFocusNode): string {

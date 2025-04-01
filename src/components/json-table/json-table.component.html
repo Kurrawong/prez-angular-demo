@@ -1,0 +1,61 @@
+<table class="min-w-full bg-white border-collapse">
+  <thead *ngIf="isObject(data)">
+    <tr class="bg-gray-200">
+      <th *ngFor="let key of objectKeys(data)" class="border px-4 py-2">{{ key }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngIf="isObject(data)">
+      <td *ngFor="let key of objectKeys(data)" class="border px-4 py-2">
+        <ng-container *ngIf="isObjectOrArray(data[key])">
+          <span class="cursor-pointer text-blue-500 underline" (click)="toggle($event, key)">
+            {{ isArray(data[key]) ? 'Array[' + data[key].length + ']' : 'Object' }}
+          </span>
+          <div *ngIf="expanded[key]">
+            <app-json-table [data]="data[key]"></app-json-table>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="!isObjectOrArray(data[key])">
+          {{ data[key] }}
+        </ng-container>
+      </td>
+    </tr>
+    <ng-container *ngIf="isArray(data) && data.every(isObject)">
+      <tr class="bg-gray-200">
+        <th *ngFor="let key of getAllKeys(data)" class="border px-4 py-2">{{ key }}</th>
+      </tr>
+      <tr *ngFor="let item of data">
+        <td *ngFor="let key of getAllKeys(data)" class="border px-4 py-2">
+          <ng-container *ngIf="isObjectOrArray(item[key])">
+            <span class="cursor-pointer text-blue-500 underline" (click)="toggle($event, key)">
+              {{ isArray(item[key]) ? 'Array[' + item[key].length + ']' : 'Object' }}
+            </span>
+            <div *ngIf="expanded[key]">
+              <app-json-table [data]="item[key]"></app-json-table>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="!isObjectOrArray(item[key])">
+            {{ item[key] }}
+          </ng-container>
+        </td>
+      </tr>
+    </ng-container>
+    <ng-container *ngIf="isArray(data) && !data.every(isObject)">
+      <tr *ngFor="let item of data; let i = index">
+        <td class="border px-4 py-2">
+          <ng-container *ngIf="isObjectOrArray(item)">
+            <span class="cursor-pointer text-blue-500 underline" (click)="toggle($event, i)">
+              {{ isArray(item) ? 'Array[' + item.length + ']' : 'Object' }}
+            </span>
+            <div *ngIf="expanded[i]">
+              <app-json-table [data]="item"></app-json-table>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="!isObjectOrArray(item)">
+            {{ item }}
+          </ng-container>
+        </td>
+      </tr>
+    </ng-container>
+  </tbody>
+</table> 

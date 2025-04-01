@@ -1,0 +1,74 @@
+<div class="container mx-auto p-4 relative">
+    <div class="bg-white shadow-md rounded-lg p-4 space-y-6">
+        <!-- Tab Selector -->
+        <div class="flex space-x-4 mb-4">
+            <button 
+                *ngFor="let type of types" 
+                (click)="selectType(type)" 
+                [class.bg-blue-500]="selectedType === type"
+                [class.text-white]="selectedType === type"
+                class="px-4 py-2 rounded-md hover:bg-blue-500 hover:text-white transition"
+            >
+                {{ type }} ({{ getCountByType(type) }})
+            </button>
+        </div>
+
+        <!-- Info Box -->
+        <div class="text-sm text-gray-500 border border-gray-300 rounded-lg p-2 mb-4 float-right w-2/4 top-0 absolute right-10" *ngIf="selectedType === 'list'">
+            <h3 class="text-base font-semibold">Lists</h3>
+            <ul class="list-disc pl-5">
+                <li>Lists are used to get a list of items from the knowledge graph.</li>
+                <li>They are paginated and can be filtered by a search query.</li>
+                <li>The data attribute contains the list of items with the main metadata for each item.</li>
+                <li>The data.properties attribute contains the main properties about the item.</li>
+            </ul>
+        </div>
+        <div class="text-sm text-gray-500 border border-gray-300 rounded-lg p-2 mb-4 float-right w-2/4 top-0 absolute right-10" *ngIf="selectedType === 'search'">
+             <h3 class="text-base font-semibold">Search</h3>
+             <ul class="list-disc pl-5">
+                 <li>Search is used to search for items across the knowledge graph.</li>
+                 <li>It is paginated and can be filtered by a search text query or CQL filter.</li>
+                 <li>The data.resource.properties attribute contains the main properties about the search item.</li>
+             </ul>
+             <h4>Notes</h4>
+             <ul class="list-disc pl-5">
+                <li>Profile switching for search is available for custom profiles</li>
+             </ul>
+         </div>
+         <div class="text-sm text-gray-500 border border-gray-300 rounded-lg p-2 mb-4 float-right w-2/4 top-0 absolute right-10" *ngIf="selectedType === 'item'">
+             <h3 class="text-base font-semibold">Item</h3>
+             <ul class="list-disc pl-5">
+                 <li>Item is used to get a single item from the knowledge graph.</li>
+                 <li>The data attribute contains the main metadata for the item.</li>
+                 <li>The data.properties attribute contains the main properties about the item.</li>
+             </ul>
+         </div>
+
+        <!-- List of Items -->
+        <div *ngFor="let name of filteredDataListNames; let i = index" 
+             class="border-b pb-4 mb-4 cursor-pointer" 
+             (click)="toggleDetails(name)">
+            
+            <ng-container *ngIf="dataListNames.indexOf(name) as originalIndex"> 
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold mb-2">{{i + 1}}. {{ name }}</h2> 
+                </div>
+                <div class="text-gray-600 mb-2">{{ dataLists[name].description }}</div>
+                <div class="text-sm text-gray-500">
+                    <p><span class="font-medium">URL:</span> {{ dataLists[name].url }} 
+                        (<a class="text-blue-500 hover:underline" href="{{ getUrl(name, dataLists[name].url, dataLists[name].params) }}" target="_blank">API</a>
+                        <span *ngIf="!dataLists[name].noUIUrl"> | <a class="text-blue-500 hover:underline" href="{{ getUIUrl(name, dataLists[name].url, dataLists[name].params) }}" target="_blank">UI</a></span>)</p>
+                    <p><span class="font-medium">Params:</span> <span [innerHTML]="dataLists[name].params | json"></span></p>
+                </div>
+                <div *ngIf="detailsVisible[originalIndex]" class="mt-2" (click)="$event.stopPropagation()"> 
+                    <div *ngIf="loading[originalIndex]" class="flex items-center justify-center mt-4"> 
+                        <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-8 w-8"></div>
+                    </div>
+                    <div *ngIf="!loading[originalIndex]" class="mt-2"> 
+                        <app-json-table [data]="dataLists[name].response"></app-json-table>
+                    </div>
+                </div>
+            </ng-container>
+        </div>
+    </div>
+</div>

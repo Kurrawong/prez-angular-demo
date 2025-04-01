@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import type { PrezFacet, PrezFacetValue } from '../../types';
 import { Router, ActivatedRoute } from '@angular/router';
+import { DataService } from '../../services/data.service';
+import { PageInfoService } from '../../services/page-info.service';
+import { Filter, parseFilterQuery } from '../../cql';
 
 @Component({
   selector: 'app-facets',
@@ -10,6 +13,12 @@ import { Router, ActivatedRoute } from '@angular/router';
   imports: [CommonModule, RouterModule],
   template: `
     <div class="w-64 bg-white p-4 mt-6 border border-gray-200 rounded-lg">
+      <div class="flex justify-between items-center mb-4">
+        <!-- add info about the current filters from the filter param in the current url -->
+        <div class="text-sm text-gray-500">
+          Current filters: {{ currentFilters }}
+        </div>
+      </div>
       <h3 class="text-lg font-semibold mb-4">Facets</h3>
       
       <div *ngFor="let group of getFacetGroups()" class="mb-6">
@@ -22,7 +31,7 @@ import { Router, ActivatedRoute } from '@angular/router';
                  class="flex items-center justify-between hover:bg-gray-50 p-1 rounded">
               <a 
                 [routerLink]="[]"
-                [queryParams]="{ _filter: facet.term.value }"
+                [queryParams]="{ filter: facet.term.value }"
                 queryParamsHandling="merge"
                 class="text-sm text-left flex-grow"
                 [class.text-blue-600]="isSelected(facet)"
@@ -39,11 +48,19 @@ import { Router, ActivatedRoute } from '@angular/router';
 })
 export class FacetsComponent {
   @Input() facets: PrezFacet[] = [];
+  currentFilters: string | null = null;
+  filter: Filter | null = null;
 
   constructor(
     private router: Router,
-    private route: ActivatedRoute
-  ) {}
+    private route: ActivatedRoute,
+    private dataService: DataService,
+    private pageInfoService: PageInfoService
+  ) {
+    const pageInfo = this.pageInfoService.getPageInfo();
+    this.filter = pageInfo.filter ? parseFilterQuery(pageInfo.filter) : null;
+    this.currentFilters = pageInfo.filter;
+  }
 
   getFacetGroups(): PrezFacet[] {
     return this.facets;

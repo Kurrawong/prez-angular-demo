@@ -1,23 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { getList, getProfiles, literal, node } from 'prez-lib';
 import { Observable, from, map, BehaviorSubject } from 'rxjs';
-import type { PrezDataList, PrezNode, PrezProfiles, PrezProfileHeader, PrezFocusNode } from 'prez-lib';
-import type { PrezDataListWithFacets, PrezFacet, PrezFacetValue, RequestInfo } from '../types';
-
-const sampleFilter = {
-  "op": "and",
-  "args": [
-    {
-      "op": "=",
-      "args": [
-        {
-          "property": "http://purl.org/linked-data/registry#status"
-        },
-        "https://linked.data.gov.au/def/reg-statuses/experimental"
-      ]
-    }
-  ]
-}
+import type { PrezDataList, PrezNode, PrezProfiles, PrezProfileHeader, PrezFocusNode, PrezDataSearch } from 'prez-lib';
+import type { PrezDataListWithFacets, PrezDataSearchWithFacets, PrezFacet, PrezFacetValue, RequestInfo } from '../types';
+import { filterToJson, type Filter } from '../cql';
+import { PageInfo } from './page-info.service';
+import { DebugService } from './debug.service';
 
 export type SimpleProfile = {
   id: string;
@@ -41,31 +29,39 @@ export class DataService {
   private baseUrl =
     'https://prez.niceforest-128e6d31.australiaeast.azurecontainerapps.io';
 
+  public getBaseUrl() {
+    return this.baseUrl;
+  }
+
   private requestInfo = new BehaviorSubject<RequestInfo | null>(null);
   requestInfo$ = this.requestInfo.asObservable();
+
+  constructor(private ngZone: NgZone, private debugService: DebugService) {}
 
   setBaseUrl(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
-  getListData(path: string, profile: string, page: number = 1, limit: number = 10): Observable<PrezDataListWithFacets> {
+  getListData(path: string, pageInfo: PageInfo): Observable<PrezDataListWithFacets> {
     const params = new URLSearchParams();
-    if(profile) {
-      params.set('_profile', profile);
+    if (pageInfo.profile) {
+      params.set('_profile', pageInfo.profile);
     }
-    if(page) {
-      params.set('page', page.toString());
+    if (pageInfo.page) {
+      params.set('page', pageInfo.page.toString());
     }
-    if(limit) {
-      params.set('limit', limit.toString());
+    if (pageInfo.limit) {
+      params.set('limit', pageInfo.limit.toString());
+    }
+    if (pageInfo.filter) {
+      params.set('filter', pageInfo.filter);
     }
     const pathWithFilter = path + '?' + params.toString();
     
-    // Emit request info
-    this.requestInfo.next({
-      url: this.baseUrl + pathWithFilter,
-      params: Object.fromEntries(params.entries())
-    } as RequestInfo);
+    // Emit request info within Angular's zone
+    this.ngZone.run(() => {
+      this.debugService.logRequest(this.baseUrl + pathWithFilter, Object.fromEntries(params.entries()));
+    });
 
     return from(getList(this.baseUrl, pathWithFilter)).pipe(
       map(data => ({
@@ -88,6 +84,20 @@ export class DataService {
         }))
       )
     );
+  }
+
+  public addFacetsToDataList(data: PrezDataList): PrezDataListWithFacets {
+    return {
+      ...data,
+      facets: this.generateFacetsFromData(data.data)
+    };
+  }
+
+  public addFacetsToDataSearch(data: PrezDataSearch): PrezDataSearchWithFacets {
+    return {
+      ...data,
+      facets: []//this.generateFacetsFromData(data.data)
+    };
   }
 
   private generateFacetsFromData(data: PrezFocusNode[]): PrezFacet[] {

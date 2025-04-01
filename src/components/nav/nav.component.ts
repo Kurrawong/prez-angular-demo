@@ -22,6 +22,13 @@ import { DataService } from '../../services/data.service';
               Home
             </a>
             <a 
+              routerLink="/simple" 
+              routerLinkActive="text-white"
+              class="hover:text-gray-300"
+            >
+              Simple
+            </a>
+            <a 
               routerLink="/data-list" 
               routerLinkActive="text-white"
               class="hover:text-gray-300"

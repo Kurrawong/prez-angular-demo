@@ -1,6 +1,6 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import type { RequestInfo } from '../../types';
+import { DebugService } from '../../services/debug.service';
 
 @Component({
   selector: 'app-debug-overlay',
@@ -19,23 +19,23 @@ import type { RequestInfo } from '../../types';
       </div>
       
       <div *ngIf="isExpanded">
-        <div class="mb-1">
+        <div class="mb-1" *ngIf="debugInfo$ | async as debugInfo">
           <span class="text-gray-400 text-xs">URL:</span>
           <a 
-            [href]="request?.url"
+            [href]="debugInfo.url"
             target="_blank"
             rel="noopener noreferrer"
             class="font-mono bg-gray-700 p-1.5 rounded mt-0.5 break-all text-xs block hover:bg-gray-600 transition-colors"
           >
-            {{ request?.url }}
+            {{ debugInfo.url }}
           </a>
         </div>
 
-        <div>
+        <div *ngIf="debugInfo$ | async as debugInfo">
           <span class="text-gray-400 text-xs">Parameters:</span>
           <table class="w-full mt-0.5">
             <tbody>
-              <tr *ngFor="let param of getParams()" class="border-t border-gray-700">
+              <tr *ngFor="let param of getParams(debugInfo.params)" class="border-t border-gray-700">
                 <td class="py-0.5 pr-3 text-gray-400 text-xs">{{ param.key }}</td>
                 <td class="py-0.5">
                   <ng-container *ngIf="isJson(param.value); else plainValue">
@@ -54,12 +54,13 @@ import type { RequestInfo } from '../../types';
   `
 })
 export class DebugOverlayComponent {
-  @Input() request: RequestInfo | null = null;
   isExpanded = true;
+  debugInfo$ = this.debugService.debugInfo$;
 
-  getParams(): { key: string, value: any }[] {
-    if (!this.request?.params) return [];
-    return Object.entries(this.request.params).map(([key, value]) => ({ key, value }));
+  constructor(private debugService: DebugService) {}
+
+  getParams(params: Record<string, any>): { key: string, value: any }[] {
+    return Object.entries(params).map(([key, value]) => ({ key, value }));
   }
 
   isJson(value: any): boolean {

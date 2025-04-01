@@ -16,7 +16,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '16' # Use the Node.js version compatible with your Angular app
+        node-version: '18.19' # Updated to meet Angular CLI requirements
 
     - name: Install dependencies
       run: npm install
@@ -28,4 +28,4 @@ jobs:
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist/demo # Replace with your actual output directory name 
+        publish_dir: ./dist/demo # Ensure this matches your actual output directory name 

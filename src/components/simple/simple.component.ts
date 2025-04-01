@@ -4,13 +4,14 @@ import { getItem, getList, PrezDataItem, search } from 'prez-lib';
 import { DataService } from '../../services/data.service';
 import { PrezDataListWithFacets, PrezDataSearchWithFacets } from '../../types';
 import { JsonTableComponent } from '../json-table/json-table.component';
-import { JsonPipe } from '../../pipes/json.pipe';
+import { JsonPipe } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { JsonTablePipe } from '../../pipes/jsontable.pipe';
 
 @Component({
   selector: 'app-simple',
   standalone: true,
-  imports: [JsonTableComponent, CommonModule, JsonPipe],
+  imports: [JsonTableComponent, CommonModule, JsonPipe, JsonTablePipe],
   templateUrl: './simple.component.html',
   styleUrl: './simple.component.css'
 })

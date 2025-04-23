@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import type { PrezFacet, PrezFacetValue } from '../../types';
+import type { PrezFacet, PrezFacetValue } from 'prez-lib';
 import { Router, ActivatedRoute } from '@angular/router';
 import { DataService } from '../../services/data.service';
 import { PageInfoService } from '../../services/page-info.service';

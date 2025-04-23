@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { getItem, getList, PrezDataItem, search } from 'prez-lib';
+import { getItem, getList, PrezDataItem, search, PrezDataList, PrezDataSearch } from 'prez-lib';
 import { DataService } from '../../services/data.service';
-import { PrezDataListWithFacets, PrezDataSearchWithFacets } from '../../types';
 import { JsonTableComponent } from '../json-table/json-table.component';
 import { JsonPipe } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -19,7 +18,7 @@ export class SimpleComponent implements OnInit {
   baseUrl = '';
   baseUiUrl = 'https://demo.dev.kurrawong.ai';
   result: any;
-  dataLists: Record<string, {url: string, type: 'list' | 'search' | 'item', params?: Record<string, any>, description: string, noUIUrl?: boolean, response?: PrezDataListWithFacets | PrezDataSearchWithFacets | PrezDataItem | null}> = {};
+  dataLists: Record<string, {url: string, type: 'list' | 'search' | 'item', params?: Record<string, any>, description: string, noUIUrl?: boolean, response?: PrezDataList | PrezDataSearch | PrezDataItem | null}> = {};
   dataListNames: string[] = [];
   filteredDataListNames: string[] = [];
   detailsVisible: boolean[] = [];
@@ -32,19 +31,26 @@ export class SimpleComponent implements OnInit {
     this.dataLists = {
       "catalogs list": {
         type: 'list',
-        description: 'Listing endpoint to get all catalogs, just passes limit and page', url: '/catalogs', params: {limit: '10', page: '1'}, response: null
+        description: 'Listing endpoint to get all catalogs, just passes limit and page', 
+        url: '/catalogs', 
+        params: {limit: '10', page: '1'}
       },
       "collections list": {
         type: 'list',
-        description: 'Listing endpoint to get all collections, just passes limit and page', url: '/catalogs/codelists:/collections', params: {limit: '10', page: '1'}, response: null
+        description: 'Listing endpoint to get all collections, just passes limit and page', 
+        url: '/catalogs/codelists:/collections', 
+        params: {limit: '10', page: '1'}
       },
       "text search collections list": {
         type: 'list',
-        description: 'Simple test search for "geometry" applied to the listing endpoint to get all collections, just passes limit and page', url: '/catalogs/codelists:/collections', params: {limit: '10', page: '1', q: 'code'}, response: null
+        description: 'Simple test search for "geometry" applied to the listing endpoint to get all collections, just passes limit and page',
+        url: '/catalogs/codelists:/collections', 
+        params: {limit: '10', page: '1', q: 'code'}
       },
       "text search catalog list": {
         type: 'list',
-        description: 'Search for "icsm" applied to the listing endpoint to get all catalogs, just passes limit and page', url: '/catalogs', params: {limit: '10', page: '1', q: 'icsm'}, response: null
+        description: 'Search for "icsm" applied to the listing endpoint to get all catalogs, just passes limit and page', 
+        url: '/catalogs', params: {limit: '10', page: '1', q: 'icsm'}
       },
       "cql search collections list": {
         type: 'list',
@@ -65,6 +71,18 @@ export class SimpleComponent implements OnInit {
           ]
         })}
       },
+      "list - member profile": {
+        type: 'list',
+        description: 'Get a collection list using the default list profile',
+        url: '/catalogs/codelists:/collections',
+        params: {limit: '10', page: '1', _profile: 'ns39:mem'}
+      },
+      "list - using a custom profile": {
+        type: 'list',
+        description: 'Get a collection list using a custom list profile',
+        url: '/catalogs/codelists:/collections',
+        params: {limit: '10', page: '1', _profile: 'prez:OGCSchemesListProfile'}
+      },
       "top concepts": {
         type: 'list',
         description: 'Get the top concepts from the catalog',
@@ -84,18 +102,22 @@ export class SimpleComponent implements OnInit {
         url: '/search', 
         params: {limit: '5', page: '1', q: 'geometry', _profile: 'openobj'}
       },
+      "simple search profile with facets": {
+        type: 'search',
+        description: 'Simple search for "monkey" applied to the search endpoint with a custom facet profile', 
+        url: '/search', 
+        params: {limit: '5', page: '1', q: 'monkey', facet_profile: 'animal-facets'}
+      },
       "item by path": {
         type: 'item',
         description: 'Get collection item by path',
-        url: '/catalogs/codelists:/collections/ns8:MD_ClassificationCode',
-        response: null
+        url: '/catalogs/codelists:/collections/ns8:MD_ClassificationCode'
       },
       "item by id": {
         type: 'item',
         description: 'Get collection item by id. The data attribute contains the main metadata for the collection, and the data.properties attribute contains the main properties about the collection.',
         url: '/object',
-        params: {uri: 'http://def.isotc211.org/19115/-1/2014/ConstraintInformation/code/MD_ClassificationCode'},
-        response: null
+        params: {uri: 'http://def.isotc211.org/19115/-1/2014/ConstraintInformation/code/MD_ClassificationCode'}
       }
     };
     this.dataListNames = Object.keys(this.dataLists);
@@ -142,10 +164,10 @@ export class SimpleComponent implements OnInit {
     try {
       if (this.dataLists[name].type === 'list') {
         const data = await getList(this.baseUrl, `${path}${queryString}`);
-        this.dataLists[name].response = this.dataService.addFacetsToDataList(data);
+        this.dataLists[name].response = data;
       } else if (this.dataLists[name].type === 'search') {
         const data = await search(this.baseUrl, `${path}${queryString}`);
-        this.dataLists[name].response = this.dataService.addFacetsToDataSearch(data);
+        this.dataLists[name].response = data;
       } else if (this.dataLists[name].type === 'item') {
         const data = await getItem(this.baseUrl, `${path}${queryString}`);
         this.dataLists[name].response = data;

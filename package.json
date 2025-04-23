@@ -28,7 +28,7 @@
     "autoprefixer": "^10.4.20",
     "n3": "^1.24.0",
     "postcss": "^8.4.49",
-    "prez-lib": "^4.0.1",
+    "prez-lib": "^4.0.5",
     "tailwindcss": "^3.4.15",
     "typescript": "~5.5.0"
   }

@@ -4,8 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DataService } from '../../services/data.service';
 import { PageInfoService } from '../../services/page-info.service';
 import { Observable } from 'rxjs';
-import type { PrezFocusNode, PrezNode } from 'prez-lib';
-import type { PrezDataListWithFacets } from '../../types';
+import type { PrezFocusNode, PrezNode, PrezDataList } from 'prez-lib';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { PaginationComponent } from '../pagination/pagination.component';
@@ -26,7 +25,7 @@ import { Filter, filterToJson, parseFilterQuery } from '../../cql';
 })
 export class DataTableComponent implements OnInit {
   @Input() columns?: PrezNode[];
-  tableData$: Observable<PrezDataListWithFacets> | null = null;
+  tableData$: Observable<PrezDataList> | null = null;
   displayColumns: string[] = [];
   apiPath: string = '';
   defaultPath: string = '/catalogs';

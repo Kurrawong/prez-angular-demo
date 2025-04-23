@@ -17,6 +17,11 @@ This is a simple Angular application that demonstrates how to use the prez libra
 - [ ] Add a pagination to paginate the datasets
 - [ ] Add a detail view to view the details of a dataset
 
+
+## API Dependencies
+- [ ] Implement faceting API
+- [ ] Update profiles to include column names
+
 ## Prerequisites
 - Node.js (v14 or later)
 - npm (comes with Node.js)

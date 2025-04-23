@@ -1,8 +1,8 @@
 import { Injectable, NgZone } from '@angular/core';
 import { getList, getProfiles, literal, node } from 'prez-lib';
 import { Observable, from, map, BehaviorSubject } from 'rxjs';
-import type { PrezDataList, PrezNode, PrezProfiles, PrezProfileHeader, PrezFocusNode, PrezDataSearch } from 'prez-lib';
-import type { PrezDataListWithFacets, PrezDataSearchWithFacets, PrezFacet, PrezFacetValue, RequestInfo } from '../types';
+import type { PrezDataList, PrezNode, PrezProfiles, PrezProfileHeader, PrezFocusNode, PrezDataSearch, PrezFacet, PrezFacetValue } from 'prez-lib';
+import type { RequestInfo } from '../types';
 import { filterToJson, type Filter } from '../cql';
 import { PageInfo } from './page-info.service';
 import { DebugService } from './debug.service';
@@ -42,7 +42,7 @@ export class DataService {
     this.baseUrl = baseUrl;
   }
 
-  getListData(path: string, pageInfo: PageInfo): Observable<PrezDataListWithFacets> {
+  getListData(path: string, pageInfo: PageInfo): Observable<PrezDataList> {
     const params = new URLSearchParams();
     if (pageInfo.profile) {
       params.set('_profile', pageInfo.profile);
@@ -63,12 +63,13 @@ export class DataService {
       this.debugService.logRequest(this.baseUrl + pathWithFilter, Object.fromEntries(params.entries()));
     });
 
-    return from(getList(this.baseUrl, pathWithFilter)).pipe(
+    return from(getList(this.baseUrl, pathWithFilter))
+    /*.pipe(
       map(data => ({
         ...data,
         facets: this.generateFacetsFromData(data.data)
       }))
-    );
+    );*/
   }
 
   getGlobalProfiles(): Observable<SimpleProfile[]> {
@@ -86,66 +87,6 @@ export class DataService {
     );
   }
 
-  public addFacetsToDataList(data: PrezDataList): PrezDataListWithFacets {
-    return {
-      ...data,
-      facets: this.generateFacetsFromData(data.data)
-    };
-  }
 
-  public addFacetsToDataSearch(data: PrezDataSearch): PrezDataSearchWithFacets {
-    return {
-      ...data,
-      facets: []//this.generateFacetsFromData(data.data)
-    };
-  }
-
-  private generateFacetsFromData(data: PrezFocusNode[]): PrezFacet[] {
-    const facetGroups = new Map<string, Map<string, { value: string, label?: string, count: number }>>();
-    
-    // Collect all property values and their counts
-    data.forEach(item => {
-      Object.entries(item.properties || {}).forEach(([propertyUri, property]) => {
-        const propertyLabel = property.predicate?.label?.value || propertyUri;
-        if (!facetGroups.has(propertyLabel)) {
-          facetGroups.set(propertyLabel, new Map());
-        }
-        
-        property.objects.forEach(obj => {
-          const value = obj.value;
-          const valueKey = value; // Use value as key for the Map
-          const existingEntry = facetGroups.get(propertyLabel)!.get(valueKey);
-          
-          facetGroups.get(propertyLabel)!.set(valueKey, {
-            value,
-            label: (obj as PrezNode).label?.value || obj.value,
-            count: (existingEntry?.count || 0) + 1
-          });
-        });
-      });
-    });
-
-    // Convert to PrezFacet array, filtering out single-occurrence values
-    return Array.from(facetGroups.entries())
-      .map(([propertyUri, values]) => {
-        // Get the property's predicate label if available
-        const predicate = data[0]?.properties?.[propertyUri]?.predicate;
-        const facetLabel = predicate?.label?.value || propertyUri;
-
-        return {
-          facetName: facetLabel,
-          facetValues: Array.from(values.entries())
-            .filter(([_, entry]) => entry.count > 1)
-            .map(([_, entry]): PrezFacetValue => ({
-              term: node({
-                value: entry.value,
-                label: literal(entry.label || entry.value)
-              }),
-              count: entry.count
-            }))
-        };
-      })
-      .filter(facet => facet.facetValues.length > 0);
-  }
 }
 

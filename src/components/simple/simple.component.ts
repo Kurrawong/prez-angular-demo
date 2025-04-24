@@ -1,16 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { getItem, getList, PrezDataItem, search, PrezDataList, PrezDataSearch } from 'prez-lib';
-import { DataService } from '../../services/data.service';
 import { JsonTableComponent } from '../json-table/json-table.component';
 import { JsonPipe } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { JsonTablePipe } from '../../pipes/jsontable.pipe';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-simple',
   standalone: true,
-  imports: [JsonTableComponent, CommonModule, JsonPipe, JsonTablePipe],
+  imports: [JsonTableComponent, CommonModule, JsonPipe, JsonTablePipe, FormsModule],
   templateUrl: './simple.component.html',
   styleUrl: './simple.component.css'
 })
@@ -25,9 +25,13 @@ export class SimpleComponent implements OnInit {
   loading: boolean[] = [];
   types = ['list', 'search', 'item'];
   selectedType = 'list';
+  customUrl = '';
+  customType: 'list' | 'search' | 'item' = 'list';
+  customResponse: PrezDataList | PrezDataSearch | PrezDataItem | { error: string; details?: any } | null = null;
+  customLoading: boolean = false;
 
-  constructor(private dataService: DataService, private sanitizer: DomSanitizer) {
-    this.baseUrl = this.dataService.getBaseUrl();
+  constructor(private sanitizer: DomSanitizer) {
+    this.baseUrl = 'http://localhost:8000';
     this.dataLists = {
       "catalogs list": {
         type: 'list',
@@ -188,6 +192,65 @@ export class SimpleComponent implements OnInit {
 
     if (this.detailsVisible[originalIndex] && !this.dataLists[name].response) {
       this.runTest(name, this.dataLists[name].url, this.dataLists[name].params);
+    }
+  }
+
+  async runCustomTest(): Promise<void> {
+    if (!this.customUrl) {
+      console.error('Custom URL is required.');
+      this.customResponse = { error: 'Custom URL is required.' };
+      return;
+    }
+
+    this.customLoading = true;
+    this.customResponse = null;
+
+    let parsedBaseUrl: string;
+    let pathAndQuery: string;
+
+    try {
+      // Parse the full URL provided by the user
+      const fullUrl = new URL(this.customUrl);
+      parsedBaseUrl = fullUrl.origin; // e.g., "https://example.com"
+      pathAndQuery = fullUrl.pathname + fullUrl.search; // e.g., "/api/items?q=test"
+
+      // Ensure path starts with '/' (should be handled by URL parsing, but good practice)
+      if (!pathAndQuery.startsWith('/')) {
+          pathAndQuery = `/${pathAndQuery}`;
+      }
+
+    } catch (e) {
+      console.error('Invalid Custom URL:', e);
+      this.customResponse = { error: 'Invalid Custom URL provided.', details: this.customUrl };
+      this.customLoading = false; // Stop loading on parsing error
+      return;
+    }
+
+    console.log(`Running custom test: Type=${this.customType}, BaseURL=${parsedBaseUrl}, Path=${pathAndQuery}`);
+
+    try {
+      let data: PrezDataList | PrezDataSearch | PrezDataItem;
+      // Call the appropriate function based on the selected type, using parsed URL parts
+      switch (this.customType) {
+        case 'list':
+          data = await getList(parsedBaseUrl, pathAndQuery);
+          break;
+        case 'search':
+          data = await search(parsedBaseUrl, pathAndQuery);
+          break;
+        case 'item':
+          data = await getItem(parsedBaseUrl, pathAndQuery);
+          break;
+        default:
+          throw new Error(`Unsupported custom type: ${this.customType}`);
+      }
+      console.log('Custom response received:', data);
+      this.customResponse = data;
+    } catch (error: any) {
+      console.error('Error fetching custom data:', error);
+      this.customResponse = { error: 'Failed to fetch data', details: error?.message || error };
+    } finally {
+      this.customLoading = false;
     }
   }
 
